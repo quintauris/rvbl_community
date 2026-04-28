@@ -7,7 +7,7 @@ build_tool=${build}/tool
 echo Bootstrapping into $layers_root ...
 
 cd $layers_root
-git submodule foreach --recursive git submodule update --init
+git submodule update --init --recursive
 git submodule foreach pre-commit install
 cd -
 
