@@ -13,6 +13,3 @@
 [submodule "riscv"]
 	path = riscv
 	url = https://github.com/quintauris-tech/rvbl_riscv.git
-[submodule "quintauris"]
-	path = quintauris
-	url = https://github.com/quintauris-tech/rvbl_quintauris.git
