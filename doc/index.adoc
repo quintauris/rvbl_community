@@ -1,0 +1,7 @@
+= The {project}
+include::../../core/doc/common.adoc[]
+
+* 📦 xref:core/index.adoc[`core` layer]
+* 📦 xref:riscv/index.adoc[`riscv` layer]
+
+Generated {localdatetime}.
