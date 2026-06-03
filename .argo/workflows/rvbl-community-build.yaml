@@ -81,7 +81,7 @@ spec:
                   value: "rvbl_community"
         - - name: prepare
             template: prepare-tools
-        - - name: build
+        - - name: build-llvm
             template: rave-build
             arguments:
               parameters:
@@ -91,7 +91,23 @@ spec:
                   value: "llvm-clang"
                 - name: branch
                   value: "{{workflow.parameters.branch}}"
-        - - name: test
+        - - name: test-llvm
+            template: rave-test
+            arguments:
+              parameters:
+                - name: branch
+                  value: "{{workflow.parameters.branch}}"
+        - - name: build-gcc
+            template: rave-build
+            arguments:
+              parameters:
+                - name: toolchain_moniker
+                  value: "gnu.gcc"
+                - name: toolchain_id
+                  value: "gnu-gcc"
+                - name: branch
+                  value: "{{workflow.parameters.branch}}"
+        - - name: test-gcc
             template: rave-test
             arguments:
               parameters:
