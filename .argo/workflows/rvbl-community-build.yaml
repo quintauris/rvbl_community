@@ -122,7 +122,7 @@ spec:
             archive:
               none: {}
       container:
-        image: ubuntu:noble
+        image: harbor.quintauris.com/dockerhub/library/ubuntu:24.04
         command: [bash, -ceu]
         args:
           - |
@@ -188,7 +188,7 @@ spec:
           - name: rvbl-doc-{{inputs.parameters.layer}}
             path: /work/rvbl_community/{{inputs.parameters.layer}}/doc/html
             s3:
-              key: "rvbl-community/doc/{{inputs.parameters.layer}}"
+              key: "rvbl-community/doc/{{inputs.parameters.layer}}/"
             archive:
               none: {}
       container:
