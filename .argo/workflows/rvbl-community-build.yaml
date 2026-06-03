@@ -135,13 +135,10 @@ spec:
             archive:
               none: {}
       container:
-        image: ubuntu:noble
+        image: harbor.quintauris.com/ghcr/quintauris-tech/rvbl-llvm-clang:latest
         command: [bash, -ceu]
-        # TODO: remove apt steps when clang/gcc docker images are available
         args:
           - |
-            apt update
-            apt install -y gcc g++ asciidoctor cmake
             export RVBL_ROOT=${PWD}/rvbl_community
             export RVBL_BUILD=${RVBL_ROOT}/build
             export RVBL_TOOL=${RVBL_BUILD}/local/tool
@@ -165,13 +162,10 @@ spec:
             archive:
               none: {}
       container:
-        image: ubuntu:noble
+        image: harbor.quintauris.com/ghcr/quintauris-tech/rvbl-llvm-clang:latest
         command: [bash, -ceu]
-        # TODO: remove apt steps when clang/gcc docker images are available
         args:
           - |
-            apt update
-            apt install -y asciidoctor
             cd rvbl_community/doc
             asciidoctor --doctype book index.adoc
         workingDir: /work
