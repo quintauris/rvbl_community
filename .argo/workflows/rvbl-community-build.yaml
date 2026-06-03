@@ -134,7 +134,7 @@ spec:
           - name: rvbl-tools
             path: /work/tools.tgz
             s3:
-              key: "rvbl-core-tools/main/tools.tgz"
+              key: "rvbl/core/tools/main/tools.tgz"
             archive:
               none: {}
       container:
@@ -204,7 +204,7 @@ spec:
           - name: rvbl-doc-{{inputs.parameters.layer}}
             path: /work/rvbl_community/{{inputs.parameters.layer}}/doc/html
             s3:
-              key: "rvbl-community/doc/{{inputs.parameters.layer}}/"
+              key: "rvbl/community/doc/{{inputs.parameters.layer}}/"
             archive:
               none: {}
       container:
@@ -231,7 +231,7 @@ spec:
           - name: rvbl-doc-index
             path: /work/rvbl_community/doc/index.html
             s3:
-              key: "rvbl-community/doc/index.html"
+              key: "rvbl/community/doc/index.html"
             archive:
               none: {}
       container:
