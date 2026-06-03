@@ -81,7 +81,22 @@ spec:
                   value: "rvbl_community"
         - - name: prepare
             template: prepare-tools
-            arguments: {}
+        - - name: build
+            template: rave-build
+            arguments:
+              parameters:
+                - name: toolchain_moniker
+                  value: "llvm.clang"
+                - name: toolchain_id
+                  value: "llvm-clang"
+                - name: branch
+                  value: "{{workflow.parameters.branch}}"
+        - - name: test
+            template: rave-test
+            arguments:
+              parameters:
+                - name: branch
+                  value: "{{workflow.parameters.branch}}"
         - - name: docs-core
             template: cmake-docs
             arguments:
@@ -111,16 +126,58 @@ spec:
         command: [bash, -ceu]
         args:
           - |
-            export RVBL_ROOT=${PWD}/rvbl_community
+            export RVBL_ROOT=${PWD}
             export RVBL_BUILD=${RVBL_ROOT}/build
             export RVBL_TOOL=${RVBL_BUILD}/local/tool
             mkdir -p ${RVBL_TOOL}
             cd ${RVBL_TOOL}
             tar -zxf /work/tools.tgz
-        workingDir: /work
+        workingDir: /work/rvbl_community
         volumeMounts:
           - name: workspace
             mountPath: /work
+
+    - name: rave-build
+      inputs:
+        parameters:
+          - name: toolchain_moniker
+          - name: toolchain_id
+          - name: branch 
+      container:
+        image: harbor.quintauris.com/ghcr/quintauris-tech/rvbl-{{inputs.parameters.toolchain_id}}:latest
+        workingDir: /work/rvbl_community
+        volumeMounts:
+          - name: workspace
+            mountPath: /work
+        command: [bash, -ceu]
+        args:
+          - |
+            export RVBL_ROOT=${PWD}
+            export RVBL_BUILD=${RVBL_ROOT}/build
+            export RVBL_TOOL=${RVBL_BUILD}/local/tool
+            export PATH=${PATH}:${RVBL_TOOL}
+            rave make --machine all --toolchain {{inputs.parameters.toolchain_moniker}} --toolchain-target default --configure --build
+
+    - name: rave-test
+      inputs:
+        parameters:
+          - name: branch 
+      container:
+        image: ubuntu:questing
+        workingDir: /work/rvbl_community
+        volumeMounts:
+          - name: workspace
+            mountPath: /work
+        command: [bash, -ceu]
+        args:
+          - |
+            export RVBL_ROOT=${PWD}
+            export RVBL_BUILD=${RVBL_ROOT}/build
+            export RVBL_TOOL=${RVBL_BUILD}/local/tool
+            export PATH=${PATH}:${RVBL_TOOL}
+            apt update
+            apt install -y cmake qemu-system-riscv
+            rave make --test
 
     - name: cmake-docs
       inputs:
@@ -143,7 +200,7 @@ spec:
             export RVBL_BUILD=${RVBL_ROOT}/build
             export RVBL_TOOL=${RVBL_BUILD}/local/tool
             export PATH=${PATH}:${RVBL_TOOL}
-            mkdir temp
+            mkdir -p temp
             cmake -B temp -S rvbl_community/{{inputs.parameters.layer}}/doc
             cmake --build temp
             rm -rf temp
