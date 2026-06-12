@@ -1,0 +1,271 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: rvbl-community-build
+  namespace: rvbl-community-workflows
+spec:
+  entrypoint: main
+  parallelism: 2
+  archiveLogs: true
+  podGC:
+    strategy: OnPodCompletion
+    deleteDelayDuration: 1h
+  volumeClaimGC:
+    strategy: OnWorkflowCompletion
+  hooks:
+    running:   { expression: workflow.status == "Running",   template: update-github-status }
+    succeeded: { expression: workflow.status == "Succeeded", template: update-github-status }
+    failed:    { expression: workflow.status == "Failed",    template: update-github-status }
+    error:     { expression: workflow.status == "Error",     template: update-github-status }
+  arguments:
+    parameters:
+      - name: repository
+        default: quintauris-tech/rvbl_community
+        description: Repository in format owner/repo
+      - name: ref
+        default: ""
+        description: Git ref (e.g., refs/heads/main)
+      - name: sha
+        default: ""
+        description: Git commit SHA
+      - name: branch
+        default: main
+        description: Branch name
+      - name: event_type
+        default: ""
+        description: "Event kind: push | pull_request | workflow_dispatch | tag"
+  serviceAccountName: argo-workflow-sa
+  volumeClaimTemplates:
+    - metadata:
+        name: workspace
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: local-path
+
+  templates:
+    - name: main
+      steps:
+        - - name: checkout
+            arguments:
+              parameters:
+                - name: repository
+                  value: "{{workflow.parameters.repository}}"
+                - name: ref
+                  value: "{{workflow.parameters.ref}}"
+                - name: sha
+                  value: "{{workflow.parameters.sha}}"
+                - name: branch
+                  value: "{{workflow.parameters.branch}}"
+                - name: workspace-path
+                  value: /workspace
+                - name: checkout-dir
+                  value: rvbl_community
+            templateRef:
+              name: git-checkout-base
+              template: git-checkout
+              clusterScope: true
+        - - name: submodules
+            templateRef:
+              name: git-submodules-base
+              template: git-submodules
+              clusterScope: true
+            arguments:
+              parameters:
+                - name: workspace-path
+                  value: "/workspace"
+                - name: checkout-dir
+                  value: "rvbl_community"
+        - - name: prepare
+            template: prepare-tools
+        - - name: build-llvm
+            template: rave-build
+            arguments:
+              parameters:
+                - name: toolchain_moniker
+                  value: "llvm.clang"
+                - name: toolchain_id
+                  value: "llvm-clang"
+                - name: branch
+                  value: "{{workflow.parameters.branch}}"
+        - - name: test-llvm
+            template: rave-test
+            arguments:
+              parameters:
+                - name: branch
+                  value: "{{workflow.parameters.branch}}"
+        - - name: build-gcc
+            template: rave-build
+            arguments:
+              parameters:
+                - name: toolchain_moniker
+                  value: "gnu.gcc"
+                - name: toolchain_id
+                  value: "gnu-gcc"
+                - name: branch
+                  value: "{{workflow.parameters.branch}}"
+        - - name: test-gcc
+            template: rave-test
+            arguments:
+              parameters:
+                - name: branch
+                  value: "{{workflow.parameters.branch}}"
+        - - name: docs-core
+            template: cmake-docs
+            arguments:
+              parameters:
+                - name: layer
+                  value: "core"
+        - - name: docs-riscv
+            template: cmake-docs
+            arguments:
+              parameters:
+                - name: layer
+                  value: "riscv"
+        - - name: docs-index
+            template: cmake-docs-index
+
+    - name: prepare-tools
+      inputs:
+        artifacts:
+          - name: rvbl-tools
+            path: /work/tools.tgz
+            s3:
+              key: "rvbl/core/tools/main/tools.tgz"
+            archive:
+              none: {}
+      container:
+        image: harbor.quintauris.com/dockerhub/library/ubuntu:24.04
+        command: [bash, -ceu]
+        args:
+          - |
+            export RVBL_ROOT=${PWD}
+            export RVBL_BUILD=${RVBL_ROOT}/build
+            export RVBL_TOOL=${RVBL_BUILD}/local/tool
+            mkdir -p ${RVBL_TOOL}
+            cd ${RVBL_TOOL}
+            tar -zxf /work/tools.tgz
+        workingDir: /work/rvbl_community
+        volumeMounts:
+          - name: workspace
+            mountPath: /work
+
+    - name: rave-build
+      inputs:
+        parameters:
+          - name: toolchain_moniker
+          - name: toolchain_id
+          - name: branch 
+      container:
+        image: harbor.quintauris.com/ghcr/quintauris-tech/rvbl-{{inputs.parameters.toolchain_id}}:latest
+        workingDir: /work/rvbl_community
+        volumeMounts:
+          - name: workspace
+            mountPath: /work
+        command: [bash, -ceu]
+        args:
+          - |
+            export RVBL_ROOT=${PWD}
+            export RVBL_BUILD=${RVBL_ROOT}/build
+            export RVBL_TOOL=${RVBL_BUILD}/local/tool
+            export PATH=${PATH}:${RVBL_TOOL}
+            rave make --machine all --toolchain {{inputs.parameters.toolchain_moniker}} --toolchain-target default --configure --build
+
+    - name: rave-test
+      inputs:
+        parameters:
+          - name: branch 
+      container:
+        image: ubuntu:questing
+        workingDir: /work/rvbl_community
+        volumeMounts:
+          - name: workspace
+            mountPath: /work
+        command: [bash, -ceu]
+        args:
+          - |
+            export RVBL_ROOT=${PWD}
+            export RVBL_BUILD=${RVBL_ROOT}/build
+            export RVBL_TOOL=${RVBL_BUILD}/local/tool
+            export PATH=${PATH}:${RVBL_TOOL}
+            apt update
+            apt install -y cmake qemu-system-riscv
+            rave make --test
+
+    - name: cmake-docs
+      inputs:
+        parameters:
+          - name: layer
+      outputs:
+        artifacts:
+          - name: rvbl-doc-{{inputs.parameters.layer}}
+            path: /work/rvbl_community/{{inputs.parameters.layer}}/doc/html
+            s3:
+              key: "rvbl/community/doc/{{inputs.parameters.layer}}/"
+            archive:
+              none: {}
+      container:
+        image: harbor.quintauris.com/ghcr/quintauris-tech/rvbl-llvm-clang:latest
+        command: [bash, -ceu]
+        args:
+          - |
+            export RVBL_ROOT=${PWD}/rvbl_community
+            export RVBL_BUILD=${RVBL_ROOT}/build
+            export RVBL_TOOL=${RVBL_BUILD}/local/tool
+            export PATH=${PATH}:${RVBL_TOOL}
+            mkdir -p temp
+            cmake -B temp -S rvbl_community/{{inputs.parameters.layer}}/doc
+            cmake --build temp
+            rm -rf temp
+        workingDir: /work
+        volumeMounts:
+          - name: workspace
+            mountPath: /work
+
+    - name: cmake-docs-index
+      outputs:
+        artifacts:
+          - name: rvbl-doc-index
+            path: /work/rvbl_community/doc/index.html
+            s3:
+              key: "rvbl/community/doc/index.html"
+            archive:
+              none: {}
+      container:
+        image: harbor.quintauris.com/ghcr/quintauris-tech/rvbl-llvm-clang:latest
+        command: [bash, -ceu]
+        args:
+          - |
+            cd rvbl_community/doc
+            asciidoctor --doctype book index.adoc
+        workingDir: /work
+        volumeMounts:
+          - name: workspace
+            mountPath: /work
+
+    - name: update-github-status
+      steps:
+        - - name: update-status
+            templateRef:
+              name: github-status-base
+              template: update-github-status
+              clusterScope: true
+            arguments:
+              parameters:
+                - name: repository
+                  value: "{{workflow.parameters.repository}}"
+                - name: sha
+                  value: "{{workflow.parameters.sha}}"
+                - name: workflow-name
+                  value: "{{workflow.name}}"
+                - name: workflow-namespace
+                  value: "{{workflow.namespace}}"
+                - name: context
+                  value: "ci/rvbl-community-workflows/rvbl-community-build"
+                - name: workflow-ui-base-url
+                  value: "https://argo-workflows.quintauris.com"
+                - name: workflow-status
+                  value: "{{workflow.status}}"
