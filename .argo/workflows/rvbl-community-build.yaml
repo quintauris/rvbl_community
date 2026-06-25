@@ -160,7 +160,7 @@ spec:
           - name: toolchain_id
           - name: branch 
       container:
-        image: harbor.quintauris.com/ghcr/quintauris-tech/rvbl-{{inputs.parameters.toolchain_id}}:latest
+        image: harbor.quintauris.com/quintauris-tech/rvbl-{{inputs.parameters.toolchain_id}}:latest
         workingDir: /work/rvbl_community
         volumeMounts:
           - name: workspace
@@ -208,7 +208,7 @@ spec:
             archive:
               none: {}
       container:
-        image: harbor.quintauris.com/ghcr/quintauris-tech/rvbl-llvm-clang:latest
+        image: harbor.quintauris.com/quintauris-tech/rvbl-llvm-clang:latest
         command: [bash, -ceu]
         args:
           - |
@@ -235,7 +235,7 @@ spec:
             archive:
               none: {}
       container:
-        image: harbor.quintauris.com/ghcr/quintauris-tech/rvbl-llvm-clang:latest
+        image: harbor.quintauris.com/quintauris-tech/rvbl-llvm-clang:latest
         command: [bash, -ceu]
         args:
           - |
