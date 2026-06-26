@@ -34,7 +34,7 @@ export RVBL_TOOL=${build_tool}/release
 echo ""
 echo "Now run 'rave' to get this party started. Fox example:"
 echo ""
-echo "> rave make --toolchain llvm.clang --toolchain-target default --machine qemu.virt_rvi20u32 --configure --build --test"
+echo "> rave make --toolchain gnu.gcc --toolchain-target default --machine qemu.virt_rvi20u32 --configure --build --test"
 echo ""
 echo "Or alternatively, configure and run a build in a Docker container:"
 echo ""

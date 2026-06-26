@@ -4,10 +4,11 @@
   https://www.apache.org/licenses/LICENSE-2.0
 ////
 
+include::../core/doc/common.adoc[]
+:stylesheet: ../core/doc/stylesheet.css
+
 = The {project}
-include::../../core/doc/common.adoc[]
+Quintauris <www.quintauris.com> (generated {localdatetime})
 
-* 📦 xref:core/index.adoc[`core` layer]
-* 📦 xref:riscv/index.adoc[`riscv` layer]
-
-Generated {localdatetime}.
+* 📦 xref:layer/core/html/index.adoc[`core` layer]
+* 📦 xref:layer/riscv/html/index.adoc[`riscv` layer]
