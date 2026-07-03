@@ -1,0 +1,2 @@
+with section("lint"):
+  disabled_codes = ['C0103', 'C0111', 'C0113', 'E1121', 'R0912', 'R0915']

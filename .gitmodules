@@ -1,0 +1,15 @@
+[submodule "qemu"]
+	path = qemu
+	url = https://github.com/quintauris-tech/rvbl_qemu.git
+[submodule "core"]
+	path = core
+	url = https://github.com/quintauris-tech/rvbl_core.git
+[submodule "gnu"]
+	path = gnu
+	url = https://github.com/quintauris-tech/rvbl_gnu.git
+[submodule "llvm"]
+	path = llvm
+	url = https://github.com/quintauris-tech/rvbl_llvm.git
+[submodule "riscv"]
+	path = riscv
+	url = https://github.com/quintauris-tech/rvbl_riscv.git
