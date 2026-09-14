@@ -7,7 +7,7 @@
 cmake_minimum_required(VERSION 3.28)
 project(distribution_doc)
 
-set(layers core riscv gnu llvm)
+set(layers core riscv gnu llvm qemu)
 
 foreach(layer ${layers})
     add_subdirectory(../${layer}/doc ${layer})
