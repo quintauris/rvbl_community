@@ -12,3 +12,4 @@ Quintauris <www.quintauris.com> (generated {localdatetime})
 
 * 📦 xref:layer/core/html/index.adoc[`core` layer]
 * 📦 xref:layer/riscv/html/index.adoc[`riscv` layer]
+* 📦 xref:layer/gnu/html/index.adoc[`gnu` layer]
