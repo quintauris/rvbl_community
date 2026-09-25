@@ -26,11 +26,13 @@ add_custom_command(
 add_custom_target(
     distribution_docs ALL DEPENDS ${target_directory}/index.html)
 
-file(GLOB pngs "${CMAKE_CURRENT_SOURCE_DIR}/*.png")
+file(GLOB images "${CMAKE_CURRENT_SOURCE_DIR}/*.png")
+file(GLOB css "${CMAKE_CURRENT_SOURCE_DIR}/*.css")
 
 install(
     FILES
     ${target_directory}/index.html
-    ${pngs}
+    ${images}
+    ${css}
     DESTINATION
     doc)
